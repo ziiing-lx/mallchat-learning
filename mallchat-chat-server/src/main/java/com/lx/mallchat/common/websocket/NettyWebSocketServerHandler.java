@@ -1,8 +1,10 @@
 package com.lx.mallchat.common.websocket;
 
+import cn.hutool.extra.spring.SpringUtil;
 import cn.hutool.json.JSONUtil;
 import com.lx.mallchat.common.websocket.domain.enums.WSReqTypeEnum;
 import com.lx.mallchat.common.websocket.domain.vo.req.WsBaseReq;
+import com.lx.mallchat.common.websocket.service.WebSocketService;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -19,6 +21,14 @@ import io.netty.handler.timeout.IdleStateEvent;
  */
 @ChannelHandler.Sharable
 public class NettyWebSocketServerHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+
+    private WebSocketService webSocketService;
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        webSocketService = SpringUtil.getBean(WebSocketService.class);
+        webSocketService.connect(ctx.channel());
+    }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
@@ -44,8 +54,7 @@ public class NettyWebSocketServerHandler extends SimpleChannelInboundHandler<Tex
             case HEARTBEAT:
                 break;
             case LOGIN:
-                System.out.println("请求二维码");
-                ctx.channel().writeAndFlush(new TextWebSocketFrame("123"));
+                webSocketService.handleLoginReq(ctx.channel());
         }
     }
 }

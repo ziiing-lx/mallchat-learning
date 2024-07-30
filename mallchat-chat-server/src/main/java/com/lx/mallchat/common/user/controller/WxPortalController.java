@@ -4,13 +4,17 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import me.chanjar.weixin.common.bean.oauth2.WxOAuth2AccessToken;
+import me.chanjar.weixin.common.error.WxErrorException;
 import me.chanjar.weixin.mp.api.WxMpMessageRouter;
 import me.chanjar.weixin.mp.api.WxMpService;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlMessage;
 import me.chanjar.weixin.mp.bean.message.WxMpXmlOutMessage;
+import me.chanjar.weixin.mp.bean.result.WxMpQrCodeTicket;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+
+import javax.annotation.Resource;
 
 /**
  * Description: 微信api交互接口
@@ -25,6 +29,15 @@ public class WxPortalController {
 
     private final WxMpService wxService;
     private final WxMpMessageRouter messageRouter;
+
+    @Resource
+    private WxMpService wxMpService;
+
+    @GetMapping("/test")
+    public String getQrcode() throws WxErrorException {
+        WxMpQrCodeTicket wxMpQrCodeTicket = wxMpService.getQrcodeService().qrCodeCreateTmpTicket(1, 10000);
+        return wxMpQrCodeTicket.getUrl();
+    }
 
     @GetMapping(produces = "text/plain;charset=utf-8")
     public String authGet(@RequestParam(name = "signature", required = false) String signature,
@@ -47,7 +60,10 @@ public class WxPortalController {
     }
 
     @GetMapping("/callBack")
-    public RedirectView callBack(@RequestParam String code) {
+    public RedirectView callBack(@RequestParam String code) throws WxErrorException {
+        WxOAuth2AccessToken accessToken = wxMpService.getOAuth2Service().getAccessToken(code);
+        WxOAuth2UserInfo zh_cn = wxMpService.getOAuth2Service().getUserInfo(accessToken, "zh_CN");
+        System.out.println(zh_cn);
         return null;
     }
 
